@@ -1,4 +1,4 @@
-// Sway 1.0.0 (Mar 15 2026)
+// Sway 1.1 (Mar 15 2026)
 // A tiny UI library by firetdev
 
 
@@ -41,27 +41,44 @@ export function html(strings: TemplateStringsArray, ...values: any[]) {
 // Renders a model into a container element
 export function render(template: any, container: HTMLElement) {
   const { strings, values } = template;
-
-  let htmlString = '';
-
-  // Go through each string, add it to the final HTML, and add a marker for where each value should go
-  // so <div>Hi, ${name}! My name is ${myName}.</div>
-  // which, when put through html() would become:
-  //
-  // strings = ["<div>Hi, ", "! My name is ", ".</div>"]
-  // values = [name, myName]
-  //
-  // would become <div>Hi, <!--marker-0-->! My name is <!--marker-1--></div>
-  for (let i = 0; i < strings.length; i++) {
-    htmlString += strings[i];
-
-    if (i < values.length) {
-      htmlString += `<!--marker-${i}-->`;
-    }
-  }
+  
+  // Create the HTML string with markers
+  let htmlString = strings.reduce((acc: any, str: any, i: any) => {
+    return acc + str + (i < values.length ? `__sway_marker_${i}__` : '');
+  }, '');
 
   // Render
   container.innerHTML = htmlString;
+
+  // Fix Attributes and Events
+  // Look for any element that has an attribute containing a marker
+  const allElements = container.querySelectorAll('*');
+  allElements.forEach(el => {
+    const attrs = el.attributes;
+    for (let i = 0; i < attrs.length; i++) {
+      const attr = attrs[i];
+      if (attr.value.includes('__sway_marker_')) {
+        const index = parseInt(attr.value.match(/\d+/)![0]);
+        const value = values[index];
+
+        // Handle Event Listeners (onClick, onChange)
+        if (attr.name.startsWith('on')) {
+          const eventName = attr.name.toLowerCase().substring(2);
+          el.addEventListener(eventName, value);
+          el.removeAttribute(attr.name);
+        } 
+        // Handle Reactive Attributes (value, style)
+        else {
+          effect(() => {
+            const val = (value && typeof value === 'object' && 'value' in value) 
+                        ? value.value : value;
+            (el as any)[attr.name] = val;
+            el.setAttribute(attr.name, val);
+          });
+        }
+      }
+    }
+  });
 
   // Goes through every branch of the DOM, with the container as the root, and looks for markers
   const walker = document.createTreeWalker(
