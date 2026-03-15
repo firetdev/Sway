@@ -1,3 +1,6 @@
+// TODO: Add syntax before the rendering function that will find
+// <model:someModel> (or some equivalent) and replace it with ${someModel()}
+
 // Variable which can temporarily hold the currently running effect function
 let currentEffect: (() => void) | null = null;
 
