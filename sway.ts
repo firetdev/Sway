@@ -1,4 +1,4 @@
-// Sway 1.1 (Mar 15 2026)
+// Sway 1.2 (Mar 15 2026)
 // A tiny UI library by firetdev
 
 
@@ -44,7 +44,7 @@ export function render(template: any, container: HTMLElement) {
 
   // Create HTML string with markers
   const htmlString = strings.reduce(
-    (acc: string, str: string, i: number) => acc + str + (i < values.length ? `__sway_marker_${i}__` : ''),
+    (acc: string, str: string, i: number) => acc + str + (i < values.length ? `<!--sway_marker_${i}-->` : ''),
     ''
   );
 
@@ -54,7 +54,7 @@ export function render(template: any, container: HTMLElement) {
   container.querySelectorAll('*').forEach(el => {
     for (let i = 0; i < el.attributes.length; i++) {
       const attr = el.attributes[i];
-      if (!attr.value.includes('__sway_marker_')) continue;
+      if (!attr.value.includes('<!--sway_marker_')) continue;
 
       const index = parseInt(attr.value.match(/\d+/)![0]);
       const value = values[index];
@@ -74,9 +74,12 @@ export function render(template: any, container: HTMLElement) {
 
   // Replace markers in DOM
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_COMMENT);
-  let index = 0;
   let node;
   while ((node = walker.nextNode())) {
+   const match = node.nodeValue!.match(/\d+/);
+    if (!match) continue; 
+    
+    const index = parseInt(match[0], 10);
     const value = values[index];
     const parent = node.parentNode!;
 
@@ -93,7 +96,5 @@ export function render(template: any, container: HTMLElement) {
     } else {
       parent.replaceChild(document.createTextNode(String(value)), node);
     }
-
-    index++;
   }
 }
