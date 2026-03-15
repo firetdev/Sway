@@ -43,7 +43,7 @@ export function render(template: any, container: HTMLElement) {
   const { strings, values } = template;
   
   // Create the HTML string with markers
-  let htmlString = strings.reduce((acc: any, str: any, i: any) => {
+  let htmlString = strings.reduce((acc: string, str: string, i: number) => {
     return acc + str + (i < values.length ? `__sway_marker_${i}__` : '');
   }, '');
 
