@@ -1,5 +1,6 @@
-// TODO: Add syntax before the rendering function that will find
-// <model:someModel> (or some equivalent) and replace it with ${someModel()}
+// Sway 1.0.0 (Mar 15 2026)
+// A tiny UI library by firetdev
+
 
 // Variable which can temporarily hold the currently running effect function
 let currentEffect: (() => void) | null = null;
