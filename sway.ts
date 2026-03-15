@@ -41,80 +41,57 @@ export function html(strings: TemplateStringsArray, ...values: any[]) {
 // Renders a model into a container element
 export function render(template: any, container: HTMLElement) {
   const { strings, values } = template;
-  
-  // Create the HTML string with markers
-  let htmlString = strings.reduce((acc: string, str: string, i: number) => {
-    return acc + str + (i < values.length ? `__sway_marker_${i}__` : '');
-  }, '');
 
-  // Render
+  // Create HTML string with markers
+  const htmlString = strings.reduce(
+    (acc: string, str: string, i: number) => acc + str + (i < values.length ? `__sway_marker_${i}__` : ''),
+    ''
+  );
+
   container.innerHTML = htmlString;
 
   // Fix Attributes and Events
-  // Look for any element that has an attribute containing a marker
-  const allElements = container.querySelectorAll('*');
-  allElements.forEach(el => {
-    const attrs = el.attributes;
-    for (let i = 0; i < attrs.length; i++) {
-      const attr = attrs[i];
-      if (attr.value.includes('__sway_marker_')) {
-        const index = parseInt(attr.value.match(/\d+/)![0]);
-        const value = values[index];
+  container.querySelectorAll('*').forEach(el => {
+    for (let i = 0; i < el.attributes.length; i++) {
+      const attr = el.attributes[i];
+      if (!attr.value.includes('__sway_marker_')) continue;
 
-        // Handle Event Listeners (onClick, onChange)
-        if (attr.name.startsWith('on')) {
-          const eventName = attr.name.toLowerCase().substring(2);
-          el.addEventListener(eventName, value);
-          el.removeAttribute(attr.name);
-        } 
-        // Handle Reactive Attributes (value, style)
-        else {
-          effect(() => {
-            const val = (value && typeof value === 'object' && 'value' in value) 
-                        ? value.value : value;
-            (el as any)[attr.name] = val;
-            el.setAttribute(attr.name, val);
-          });
-        }
+      const index = parseInt(attr.value.match(/\d+/)![0]);
+      const value = values[index];
+
+      if (attr.name.startsWith('on')) {
+        const eventName = attr.name.slice(2).toLowerCase();
+        el.addEventListener(eventName, value);
+        el.removeAttribute(attr.name);
+      } else {
+        effect(() => {
+          const val = (value && typeof value === 'object' && 'value' in value) ? value.value : value;
+          (el as any)[attr.name] = val;
+        });
       }
     }
   });
 
-  // Goes through every branch of the DOM, with the container as the root, and looks for markers
-  const walker = document.createTreeWalker(
-    container,
-    NodeFilter.SHOW_COMMENT
-  );
-
+  // Replace markers in DOM
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_COMMENT);
   let index = 0;
   let node;
-
   while ((node = walker.nextNode())) {
     const value = values[index];
     const parent = node.parentNode!;
 
-    // If it's a signal or text
-    if (value && typeof value === 'object' && 'value' in value) {  // It exists, is an object, and has a "value" property
+    if (value && typeof value === 'object' && 'value' in value) {
       const textNode = document.createTextNode('');
       parent.replaceChild(textNode, node);
-
       effect(() => {
         textNode.textContent = value.value;
       });
-    }
-
-    // If it's a nested model
-    else if (value && value.strings && value.values) {  // It exists and has "strings" and "values" properties
+    } else if (value && value.strings && value.values) {
       const placeholder = document.createElement('span');
       parent.replaceChild(placeholder, node);
-
       render(value, placeholder);
-    }
-
-    // If it's a plain value
-    else {
-      const textNode = document.createTextNode(String(value));
-      parent.replaceChild(textNode, node);
+    } else {
+      parent.replaceChild(document.createTextNode(String(value)), node);
     }
 
     index++;
