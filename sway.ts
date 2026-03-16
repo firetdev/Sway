@@ -101,7 +101,6 @@ export function render(template: any, container: HTMLElement) {
       effect(() => {
         listContainer.innerHTML = '';
         value.forEach(item => {
-          console.log(item);
           const child = document.createElement('div');
           listContainer.appendChild(child);
           render(item, child);
