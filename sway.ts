@@ -1,4 +1,4 @@
-// Sway 1.4 (Mar 15 2026)
+// Sway 1.5 (Mar 15 2026)
 // A tiny UI library by firetdev
 
 
@@ -89,7 +89,30 @@ export function render(template: any, container: HTMLElement) {
     const value = values[index];
     const parent = node.parentNode!;
 
-    if (value && typeof value === 'object' && 'value' in value) {
+    if (typeof value === 'function') {
+      const placeholder = document.createElement('div');
+      parent.replaceChild(placeholder, node);
+
+      effect(() => {
+        const result = value();
+
+        placeholder.innerHTML = '';
+
+        if (Array.isArray(result)) {
+          result.forEach(item => {
+            const child = document.createElement('div');
+            placeholder.appendChild(child);
+            render(item, child);
+          });
+        } else if (result && typeof result === 'object' && 'strings' in result) {
+          render(result, placeholder);
+        } else {
+          placeholder.textContent = result;
+        }
+      });
+
+      return;
+    } if (value && typeof value === 'object' && 'value' in value) {
       const textNode = document.createTextNode('');
       parent.replaceChild(textNode, node);
       effect(() => {
