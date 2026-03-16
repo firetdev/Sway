@@ -27,7 +27,7 @@ export function signal<T>(value: T) {
 
 // Basically a proxy for calling a function. Because currentEffect is set to the function we want to run,
 // any signals used within the function will know to subscribe to it.
-function effect(fn: () => void) {
+export function effect(fn: () => void) {
   currentEffect = fn;
   fn();
   currentEffect = null;
