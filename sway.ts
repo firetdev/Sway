@@ -1,4 +1,4 @@
-// Sway 1.2 (Mar 15 2026)
+// Sway 1.3 (Mar 15 2026)
 // A tiny UI library by firetdev
 
 
@@ -72,12 +72,18 @@ export function render(template: any, container: HTMLElement) {
     }
   });
 
-  // Replace markers in DOM
+  // Find all markers
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_COMMENT);
+  const markers: Comment[] = [];
   let node;
   while ((node = walker.nextNode())) {
-   const match = node.nodeValue!.match(/\d+/);
-    if (!match) continue; 
+    markers.push(node as Comment);
+  }
+
+  // Replace markers in DOM
+  markers.forEach(node => {
+    const match = node.nodeValue!.match(/\d+/);
+    if (!match) return; 
     
     const index = parseInt(match[0], 10);
     const value = values[index];
@@ -90,11 +96,11 @@ export function render(template: any, container: HTMLElement) {
         textNode.textContent = value.value;
       });
     } else if (value && value.strings && value.values) {
-      const placeholder = document.createElement('span');
+      const placeholder = document.createElement('div');
       parent.replaceChild(placeholder, node);
       render(value, placeholder);
     } else {
       parent.replaceChild(document.createTextNode(String(value)), node);
     }
-  }
+  });
 }
